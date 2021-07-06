@@ -37,15 +37,21 @@ func (runner *Runner) DoseStepper(speed float64, duration float64) {
 		runner.pump.In2Pin,
 		runner.pump.In3Pin,
 		runner.pump.In4Pin)
-	stepper := gpio.NewStepperDriver(r, [4]string{runner.pump.In1Pin, runner.pump.In2Pin,
-		runner.pump.In3Pin,
-		runner.pump.In4Pin},
-		gpio.StepperModes.DualPhaseStepping, runner.pump.StepsPerRevolution)
+	stepper := gpio.NewStepperDriver(r,
+		[4]string{runner.pump.In1Pin,
+			runner.pump.In2Pin,
+			runner.pump.In3Pin,
+			runner.pump.In4Pin},
+		gpio.StepperModes.DualPhaseStepping,
+		runner.pump.StepsPerRevolution)
+	// maPWMPin := "17"
+	// mbPWNPin := "21"
+	// maSpeedGpio := gpio.NewDirectPinDriver(r, maPWMPin)
 
 	work := func() {
 		//set spped
 		stepper.SetSpeed(uint(speed))
-
+		// maSpeedGpio.PwmWrite(maSpeed)
 		//Move forward one revolution
 		if err := stepper.Move(int(duration)); err != nil {
 			fmt.Println(err)
