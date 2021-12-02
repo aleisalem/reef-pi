@@ -5,9 +5,7 @@ go 1.13
 require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/coreos/go-systemd/v22 v22.0.0
-	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.0
-	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/godbus/dbus/v5 v5.0.3
@@ -24,11 +22,9 @@ require (
 	github.com/reef-pi/rpi v0.0.0-20200302080122-e460902484d9
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil v2.19.11+incompatible
-	github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2 // indirect
-	github.com/swaggo/http-swagger v1.1.1 // indirect
-	github.com/swaggo/swag v1.7.1 // indirect
-	github.com/urfave/cli v1.20.0 // indirect
+	github.com/swaggo/swag v1.7.1
 	go.etcd.io/bbolt v1.3.3
+	gobot.io/x/gobot v1.15.0
 	golang.org/x/net v0.0.0-20210917221730-978cfadd31cf // indirect
 	golang.org/x/sys v0.0.0-20210923061019-b8560ed6a9b7 // indirect
 	golang.org/x/text v0.3.7 // indirect
