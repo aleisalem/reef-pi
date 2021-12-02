@@ -26,6 +26,10 @@ go:
 pi:
 	env GOOS=linux GOARCH=arm go build -o $(BINARY) -ldflags "-s -w -X main.Version=$(VERSION)"  ./commands
 
+.PHONY:cm4
+cm4:
+	env GOOS=linux GOARCH=arm64 go build -o $(BINARY) -ldflags "-s -w -X main.Version=$(VERSION)"  ./commands
+
 .PHONY: pi-zero
 pi-zero:
 	env GOARM=6 GOOS=linux GOARCH=arm go build -o $(BINARY) -ldflags "-s -w -X main.Version=$(VERSION)"  ./commands
@@ -81,8 +85,15 @@ deb: ui
 	cp build/reef-pi.yml dist/etc/reef-pi/config.yml
 	mkdir -p dist/var/lib/reef-pi/images
 	rm -rf reef-pi-$(VERSION).deb || true
-	bundle exec fpm -t deb -s dir -a armhf -n reef-pi -v $(VERSION) -m ranjib@linux.com --deb-systemd build/reef-pi.service -C dist  -p reef-pi-$(VERSION).deb .
+	bundle exec fpm -t deb -s dir -a armhf -n reef-pi -v $(VERSION) -m mohsen.ahmadv@gmail.com --deb-systemd build/reef-pi.service -C dist  -p reef-pi-$(VERSION).deb .
 
+.PHONY: kubeedge
+kubeedge: ui
+	cp bin/reef-pi kubeedge-images/reef-pi
+	cp -r ui kubeedge-images/
+	docker build kubeedge-images/ -t mrma000/reef-pi-monolith:$(VERSION)
+	docker login
+	docker push mrma000/reef-pi-monolith:$(VERSION)
 .PHONY: clean
 clean:
 	-rm -rf *.deb
