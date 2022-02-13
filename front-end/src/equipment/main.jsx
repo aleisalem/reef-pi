@@ -26,7 +26,11 @@ class main extends React.Component {
   handleAddEquipment (values) {
     const payload = {
       name: values.name,
-      outlet: values.outlet
+      outlet: values.outlet,
+      is_remote: values.is_remote,
+      on_cmd: values.on_cmd,
+      off_cmd: values.off_cmd,
+      remote_type: values.remote_type
     }
     this.props.create(payload)
     this.handleToggleAddEquipmentDiv()

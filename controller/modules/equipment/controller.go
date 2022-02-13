@@ -2,12 +2,14 @@ package equipment
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+
 	"github.com/kidoman/embd"
 	"github.com/reef-pi/reef-pi/controller"
 	"github.com/reef-pi/reef-pi/controller/connectors"
 	"github.com/reef-pi/reef-pi/controller/storage"
 	"github.com/reef-pi/reef-pi/controller/telemetry"
-	"log"
 )
 
 type Config struct {
@@ -86,8 +88,25 @@ func (c *Controller) On(id string, b bool) error {
 	return c.Update(id, e)
 }
 func (c *Controller) updateOutlet(eq Equipment) error {
-	if err := c.outlets.Configure(eq.Outlet, eq.On); err != nil {
-		return err
+	if !eq.IsRemote {
+		if err := c.outlets.Configure(eq.Outlet, eq.On); err != nil {
+			return err
+		}
+	} else {
+		//set equipment ON/OFF for remote equipments
+		if eq.RemoteType == "http" {
+			httpCmd := ""
+			if eq.On {
+				httpCmd = eq.OnCmd
+			} else {
+				httpCmd = eq.OffCmd
+			}
+			resp, err := http.Get(httpCmd)
+			log.Println("response remote http equipment response code:", resp.Status)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	m := 0.0
 	if eq.On {
