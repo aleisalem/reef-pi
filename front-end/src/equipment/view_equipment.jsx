@@ -7,7 +7,11 @@ const ViewEquipment = ({ equipment, outletName, onStateChange, onDelete, onEdit 
     const payload = {
       name: equipment.name,
       on: !equipment.on,
-      outlet: equipment.outlet
+      outlet: equipment.outlet,
+      is_remote: equipment.is_remote,
+      on_cmd: equipment.on_cmd,
+      off_cmd: equipment.off_cmd,
+      remote_type: equipment.remote_type
     }
     onStateChange(equipment.id, payload)
   }

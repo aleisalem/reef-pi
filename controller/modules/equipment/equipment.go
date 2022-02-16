@@ -10,10 +10,14 @@ import (
 const Bucket = storage.EquipmentBucket
 
 type Equipment struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Outlet string `json:"outlet"`
-	On     bool   `json:"on"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Outlet     string `json:"outlet"`
+	On         bool   `json:"on"`
+	IsRemote   bool   `json:"is_remote"`
+	OnCmd      string `json:"on_cmd"`
+	OffCmd     string `json:"off_cmd"`
+	RemoteType string `json:"remote_type"`
 }
 
 func (c *Controller) Get(id string) (Equipment, error) {
