@@ -46,10 +46,10 @@ func (runner *Runner) DoseStepper(speed float64, duration float64) {
 		log.Fatal(err)
 	}
 	// Use gpioreg GPIO pin registry to find a GPIO pin by name.
-	stepPin := gpioreg.ByName("GPIO24")
-	dirPin := gpioreg.ByName("GPIO25")
-	ms1Pin := gpioreg.ByName("GPIO23")
-	ms2Pin := gpioreg.ByName("GPIO18")
+	stepPin := gpioreg.ByName("GPIO" + runner.pump.In1Pin)
+	dirPin := gpioreg.ByName("GPIO" + runner.pump.In2Pin)
+	ms1Pin := gpioreg.ByName("GPIO" + runner.pump.In3Pin)
+	ms2Pin := gpioreg.ByName("GPIO" + runner.pump.In4Pin)
 	if stepPin == nil || dirPin == nil {
 		log.Fatal("Failed to find GPIO24 or GPIO25")
 	}
@@ -149,14 +149,27 @@ func (r *Runner) Dose(speed float64, duration float64) error {
 			log.Fatal(err)
 		}
 		// Use gpioreg GPIO pin registry to find a GPIO pin by name.
-		pwmPin := gpioreg.ByName("GPIO7")
-		dirPin := gpioreg.ByName("GPIO16")
-		if pwmPin == nil || dirPin == nil {
-			log.Fatal("Failed to find GPIO7 or GPIO16")
+		in1Pin := gpioreg.ByName("GPIO" + r.pump.In1Pin)
+		pwmPin := gpioreg.ByName("GPIO" + r.pump.In3Pin)
+		freq, err := strconv.Atoi(r.pump.In4Pin)
+		if err != nil {
+			log.Fatal("failed to convert In4Pin to frequency", err)
+		}
+		if in1Pin == nil || pwmPin == nil {
+			log.Fatal("Failed to find in1Pin, in2Pin, or pwmPin, use BCM numbers, e.g., 16 for GPIO16")
 		}
 		log.Println("PWM motor starting at speed of ", speed)
-		if err := dirPin.Out(gpio2.Low); err != nil {
+		//set direction
+		if err := in1Pin.Out(gpio2.Low); err != nil {
 			log.Fatal(err)
+		}
+
+		//if there are two direction pins set the second one too
+		if r.pump.In2Pin != "" {
+			in2Pin := gpioreg.ByName("GPIO" + r.pump.In2Pin)
+			if err := in2Pin.Out(gpio2.High); err != nil {
+				log.Fatal(err)
+			}
 		}
 
 		if err := pwmPin.Out(gpio2.High); err != nil {
@@ -164,140 +177,27 @@ func (r *Runner) Dose(speed float64, duration float64) error {
 		}
 		speedToDuty := int(gpio2.DutyMax) * int(speed) / 100
 		//start with 500hz as specified in the welco manual
-		if err := pwmPin.PWM(gpio2.Duty(speedToDuty), 500*physic.Hertz); err != nil {
+		if err := pwmPin.PWM(gpio2.Duty(speedToDuty), physic.Frequency(freq)*physic.Hertz); err != nil {
 			log.Fatal(err)
 		}
-
-		// when the pump needs to run longer, we should take care of vendor specific duty logic
-		// in this case I am implementing the logic below to adhere to Welco's spec
-		if duration > 3 {
-			log.Println("PWM motor at 500 hz")
-			time.Sleep(time.Duration(100 * time.Millisecond))
-
-			log.Println("PWM motor at 2500 hz duty")
-			if err := pwmPin.PWM(gpio2.Duty(speedToDuty), 2500*physic.Hertz); err != nil {
-				log.Fatal(err)
-			}
-			time.Sleep(time.Duration(100 * time.Millisecond))
-
-			log.Println("PWM motor at 8000 hz duty")
-			if err := pwmPin.PWM(gpio2.Duty(speedToDuty), 8000*physic.Hertz); err != nil {
-				log.Fatal(err)
-			}
-		}
 		time.Sleep(time.Duration(duration * float64(time.Second)))
-
-		//reverse motor
-		// if err := pwmPin.Out(gpio2.Low); err != nil {
-		// 	log.Fatal(err)
-		// }
-		// if err := dirPin.Out(gpio2.Low); err != nil {
-		// 	log.Fatal(err)
-		// }
-		// log.Println("PWM motor reversing at speed of ", speed)
-		// if err := dirPin.Out(gpio2.High); err != nil {
-		// 	log.Fatal(err)
-		// }
-
-		// if err := pwmPin.Out(gpio2.Low); err != nil {
-		// 	log.Fatal(err)
-		// }
-		// if err := pwmPin.PWM(gpio2.Duty(0), 500*physic.Hertz); err != nil {
-		// 	log.Fatal(err)
-		// }
-		// log.Println("PWM motor reverse at 500 hz")
-		// time.Sleep(time.Duration(1 * time.Second))
-
-		// log.Println("PWM motor at 8000 hz duty")
-		// if err := pwmPin.PWM(gpio2.DutyMax, 8000*physic.Hertz); err != nil {
-		// 	log.Fatal(err)
-		// }
-		// time.Sleep(time.Duration(duration * float64(time.Second)))
 
 		if err := pwmPin.Out(gpio2.Low); err != nil {
 			log.Fatal(err)
 		}
-		if err := dirPin.Out(gpio2.Low); err != nil {
+		if err := in1Pin.Out(gpio2.Low); err != nil {
 			log.Fatal(err)
 		}
+
+		//if there are two direction pins set the second one too
+		if r.pump.In2Pin != "" {
+			in2Pin := gpioreg.ByName("GPIO" + r.pump.In2Pin)
+			if err := in2Pin.Out(gpio2.Low); err != nil {
+				log.Fatal(err)
+			}
+		}
+
 		log.Println("PWM motor halted")
-
-		// pinDir := rpio.Pin(16)
-		// pinPWM := rpio.Pin(7)
-		// pinPWM.Mode(rpio.Pwm)
-		// pinDir.Mode(rpio.Output)
-
-		// pinPWM.Freq(64000)
-		// log.Println("PWM motor starting at speed of ", speed)
-		// pinPWM.Write(rpio.High)
-		// pinDir.Write(rpio.Low)
-		// time.Sleep(time.Duration(duration * float64(time.Second)))
-		// pinPWM.Write(rpio.Low)
-		// pinDir.Write(rpio.Low)
-		// log.Println("PWM motor halted")
-
-		// log.Println("PWM motor reversing at speed of ", speed)
-		// pinPWM.Write(rpio.Low)
-		// pinDir.Write(rpio.High)
-		// time.Sleep(time.Duration(duration * float64(time.Second)))
-		// pinPWM.Write(rpio.Low)
-		// pinDir.Write(rpio.Low)
-		// log.Println("PWM motor halted")
-
-		// rasp := raspi.NewAdaptor()
-		// pwmPin := "26" //GPIO07
-		// // dirPin := "36" //GPIO16
-		// pwmDirectGPIO := gpio.NewDirectPinDriver(rasp, pwmPin)
-		// log.Println("PWM motor starting at speed of ", speed)
-		// pwmDirectGPIO.PwmWrite(byte(speed))
-		// time.Sleep(time.Duration(duration * float64(time.Second)))
-		// pwmDirectGPIO.Off()
-		// log.Println("PWM motor halted")
-
-		// pwmMotor := gpio.NewMotorDriver(rasp, pwmPin)
-		// pwmMotor.DirectionPin = dirPin
-		// var err error
-		// work := func() {
-		// 	//set speed
-		// 	pwmMotor.Speed(byte(speed))
-		// 	// maSpeedGpio.PwmWrite(maSpeed)
-		// 	//Move forward one revolution
-		// 	if err = pwmMotor.On(); err != nil {
-		// 		log.Fatalln(err)
-		// 	}
-		// 	log.Println("PWM motor starting at speed of ", speed)
-		// 	// select {
-		// 	// case <-time.After(time.Duration(duration * float64(time.Second))):
-		// 	time.Sleep(time.Duration(duration * float64(time.Second)))
-		// 	if err = pwmMotor.Off(); err != nil {
-		// 		log.Fatalln(err.Error())
-		// 	}
-		// 	log.Println("PWM motor halted")
-		// 	// }
-		// }
-
-		// robot := gobot.NewRobot("pwmMotorBot",
-		// 	[]gobot.Connection{rasp},
-		// 	[]gobot.Device{pwmMotor},
-		// 	work,
-		// )
-
-		// robot.Start()
-
-		// v := make(map[int]float64)
-		// v[r.pump.Pin] = speed
-		// if err := r.jacks.Control(r.pump.Jack, v); err != nil {
-		// 	log.Fatalln(err.Error())
-		// 	return err
-		// }
-		// select {
-		// case <-time.After(time.Duration(duration * float64(time.Second))):
-		// 	v[r.pump.Pin] = 0
-		// 	if err := r.jacks.Control(r.pump.Jack, v); err != nil {
-		// 		log.Fatalln(err.Error())
-		// 		return err
-		// 	}
-		// }
 	}
 	return nil
 }
