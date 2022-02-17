@@ -146,7 +146,7 @@ const EditDoser = ({
 
         <div className='col-12 col-sm-6 col-md-3'>
           <div className='form-group'>
-            <label htmlFor='in1_pin'>In1 Pin</label>
+            <label htmlFor='in1_pin'>BCM In1 Pin (In1 / Step for stepper)</label>
             <Field
               name='in1_pin'
               // component='select'
@@ -164,7 +164,7 @@ const EditDoser = ({
 
         <div className='col-12 col-sm-6 col-md-3'>
           <div className='form-group'>
-            <label htmlFor='in2_pin'>In2 Pin</label>
+            <label htmlFor='in2_pin'>BCM In2 Pin (In2 / Dir for stepper)</label>
             <Field
               name='in2_pin'
               // component='select'
@@ -182,7 +182,7 @@ const EditDoser = ({
 
         <div className='col-12 col-sm-6 col-md-3'>
           <div className='form-group'>
-            <label htmlFor='in3_pin'>In3 Pin</label>
+            <label htmlFor='in3_pin'>BCM In3 Pin (MS1 / PWM for DC)</label>
             <Field
               name='in3_pin'
               // component='select'
@@ -200,7 +200,7 @@ const EditDoser = ({
 
         <div className='col-12 col-sm-6 col-md-3'>
           <div className='form-group'>
-            <label htmlFor='in4_pin'>In4 Pin</label>
+            <label htmlFor='in4_pin'>BCM In4 Pin (MS2 / Frequency for DC)</label>
             <Field
               name='in4_pin'
               // component='select'
