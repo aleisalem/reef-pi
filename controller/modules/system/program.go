@@ -1,5 +1,11 @@
 package system
 
+import (
+	"time"
+
+	"github.com/reef-pi/reef-pi/controller/modules/timer"
+)
+
 type Program struct {
 	MainTankTemperature     string `json:"maintank_temperature"`
 	ReservoirTemperature    string `json:"reservoir_temperature"`
@@ -16,4 +22,19 @@ type Program struct {
 	WaterChangeSchedule     string `json:"waterchange_schedule"`
 	ConditionerDuration     string `json:"conditioner_duration"`
 	ReservoirFillUpDuration string `json:"reservoir_fill_up_duration"`
+}
+type MacroInitConfig struct {
+	safeTemperatureRangeForReservoir []float64
+	waterOutDuration                 uint
+	waterOutSpeed                    uint8
+	waitTempPeriod                   time.Duration
+	mainTankATOTimeGuard             time.Duration
+	reservoirATOTimeGuard            time.Duration
+	conditionerDosingDuration        time.Duration
+	conditionerDosingSpeed           uint8
+}
+
+type TimerInitConfig struct {
+	waterChangeSchedules    []timer.Job
+	reservoirFillUpSchedule timer.Job
 }

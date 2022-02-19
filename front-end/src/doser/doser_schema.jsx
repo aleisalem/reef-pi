@@ -3,10 +3,8 @@ import * as Yup from 'yup'
 const DoserSchema = Yup.object().shape({
   name: Yup.string()
     .required('Name is required'),
-  jack: Yup.string()
-    .required('Jack is required'),
-  pin: Yup.string()
-    .required('Pin is required'),
+  jack: Yup.string(), //.required('Jack is required'),
+  pin: Yup.string(), // .required('Pin is required'),
   is_stepper: Yup.bool()
     .required('Is Stepper Motor? is required'),
   enable: Yup.bool()
