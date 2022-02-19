@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -91,6 +92,25 @@ func (tc *TC) loadCalibrator() {
 	}
 }
 
+func (c *Controller) Sensors() (sensors []string, err error) {
+	fs := []string{
+		"/sys/bus/w1/devices/28-04177049bcff",
+		"/sys/bus/w1/devices/28-2392abcabcabc",
+		"/sys/bus/w1/devices/28-f0a0a0abbd4f",
+	}
+	if !c.devMode {
+		files, err := filepath.Glob("/sys/bus/w1/devices/28-*")
+		if err != nil {
+			return nil, err
+		}
+		fs = files
+	}
+	sensors = []string{}
+	for _, f := range fs {
+		sensors = append(sensors, filepath.Base(f))
+	}
+	return sensors, nil
+}
 func (c *Controller) Create(tc TC) error {
 	c.Lock()
 	defer c.Unlock()

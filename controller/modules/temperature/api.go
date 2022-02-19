@@ -2,7 +2,6 @@ package temperature
 
 import (
 	"net/http"
-	"path/filepath"
 
 	"github.com/gorilla/mux"
 
@@ -60,23 +59,7 @@ func (c Controller) list(w http.ResponseWriter, r *http.Request) {
 
 func (t *Controller) sensors(w http.ResponseWriter, r *http.Request) {
 	fn := func(id string) (interface{}, error) {
-		fs := []string{
-			"/sys/bus/w1/devices/28-04177049bcff",
-			"/sys/bus/w1/devices/28-2392abcabcabc",
-			"/sys/bus/w1/devices/28-f0a0a0abbd4f",
-		}
-		if !t.devMode {
-			files, err := filepath.Glob("/sys/bus/w1/devices/28-*")
-			if err != nil {
-				return nil, err
-			}
-			fs = files
-		}
-		sensors := []string{}
-		for _, f := range fs {
-			sensors = append(sensors, filepath.Base(f))
-		}
-		return sensors, nil
+		return t.Sensors()
 	}
 	utils.JSONGetResponse(fn, w, r)
 }
