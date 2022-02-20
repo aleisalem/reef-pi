@@ -32,6 +32,7 @@ func (c *Controller) LoadAPI(r *mux.Router) {
 	r.HandleFunc("/api/admin/upgrade", c.upgrade).Methods("POST")
 	r.HandleFunc("/api/info", c.GetSummary).Methods("GET")
 
+	r.HandleFunc("/api/admin/program", c.GetProgram).Methods("GET")
 	r.HandleFunc("/api/admin/program", c.Program).Methods("POST")
 
 	if c.config.Pprof {
@@ -128,6 +129,19 @@ func (c *Controller) upgrade(w http.ResponseWriter, r *http.Request) {
 			return "", fmt.Errorf("Failed to update. Error: " + err.Error())
 		}
 		return "", nil
+	}
+	utils.JSONGetResponse(fn, w, r)
+}
+
+func (c *Controller) GetProgram(w http.ResponseWriter, r *http.Request) {
+	fn := func(string) (interface{}, error) {
+		log.Println("Get program status")
+		programmed, err := c.isProgrammed()
+		if err != nil { //when not programmed the programmed field is not in the bucket and throws error
+			return false, nil
+		} else {
+			return programmed, nil
+		}
 	}
 	utils.JSONGetResponse(fn, w, r)
 }
@@ -493,9 +507,10 @@ func (c *Controller) Program(w http.ResponseWriter, r *http.Request) {
 	fn := func(string) (interface{}, error) {
 		log.Println("Programming reef-pi controller")
 		//check if programmed already and return if so
-
-		//if not programmed
-		//Create temperature controllers (at least two)
+		if programmed, err := c.isProgrammed(); err == nil && programmed {
+			return "Already programmed", nil
+		}
+		//Create temperature controllers (at least two sensors must be detected)
 		TCSIDs, err := c.createTempSensors()
 		if err != nil {
 			log.Fatalln(err)
@@ -611,6 +626,12 @@ func (c *Controller) Program(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return "", fmt.Errorf("Failed to program. Error: " + err.Error())
 		}
+
+		err = c.markAsProgrammed()
+		if err != nil {
+			return "", fmt.Errorf("Failed to program. Error: " + err.Error())
+		}
+
 		return "GUUT", nil
 	}
 	utils.JSONGetResponse(fn, w, r)

@@ -38,3 +38,13 @@ type TimerInitConfig struct {
 	waterChangeSchedules    []timer.Job
 	reservoirFillUpSchedule timer.Job
 }
+
+func (c *Controller) markAsProgrammed() error {
+	l := true
+	return c.c.Store().CreateWithID(Bucket, "already_programmed", &l)
+}
+
+func (c *Controller) isProgrammed() (bool, error) {
+	var l bool
+	return l, c.c.Store().Get(Bucket, "already_programmed", &l)
+}
