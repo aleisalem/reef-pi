@@ -241,37 +241,45 @@ func (c *Controller) createATOs(atoNames []string,
 	return nil, ATOIDs
 }
 func (c *Controller) createRemoteEquipments(outletURIs []string,
-	outletNames []string) (err error, equipmentIDs []string) {
+	outletNames []string, macroConfig MacroInitConfig) (equipmentIDs []string, err error) {
 	equipmentIDs = []string{}
 	equipmentSubsystem, _ := c.c.Subsystem(equipment.Bucket)
 	equipmentSub, ok := equipmentSubsystem.(*equipment.Controller)
 	if !ok {
-		return errors.New("failed to cast ato subsystem to equipment controller"), equipmentIDs
+		return equipmentIDs, errors.New("failed to cast ato subsystem to equipment controller")
 	}
 
 	for index, outletURI := range outletURIs {
+		timeGuardOnCommand := ""
+		if index == 0 {
+			//reservoir pump outlet
+			timeGuardOnCommand = fmt.Sprintf("%%3B%%20Delay%%20%d%%3B%%20Power3%%20OFF", macroConfig.mainTankATOTimeGuard*10) //the reason we multiply by 10 is tasmota takes seconds multiplied by 10, e.g., 10 seconds delay should be input as 100
+		} else if index == 1 {
+			//solenoid valve outlet
+			timeGuardOnCommand = fmt.Sprintf("%%3B%%20Delay%%20%d%%3B%%20Power3%%20OFF", macroConfig.reservoirATOTimeGuard*10)
+		}
 		remoteOutlet := equipment.Equipment{
 			Name:       "remote - " + outletNames[index],
 			IsRemote:   true,
-			OnCmd:      outletURI + "%20ON",
+			OnCmd:      outletURI + "%20ON" + timeGuardOnCommand,
 			OffCmd:     outletURI + "%20OFF",
 			RemoteType: "http",
 		}
 		err := equipmentSub.Create(remoteOutlet)
 		if err != nil {
-			return err, equipmentIDs
+			return equipmentIDs, err
 		}
 	}
 
 	equipments, err := equipmentSub.List()
 	if err != nil {
-		return err, equipmentIDs
+		return equipmentIDs, err
 	}
 	for _, equipment := range equipments {
 		equipmentIDs = append(equipmentIDs, equipment.ID)
 	}
 
-	return nil, equipmentIDs
+	return equipmentIDs, nil
 }
 func (c *Controller) createDosingPumps(dosingPumpNames []string,
 	dosingPumpPins [][]string) (err error, dosingPumpIDs []string) {
@@ -522,12 +530,24 @@ func (c *Controller) Program(w http.ResponseWriter, r *http.Request) {
 			log.Fatalln(err)
 		}
 
+		//TODO: Hardcoded init values, need to be configured based on fish types, reservoir size, and pump calibration times
+		macroConfig := MacroInitConfig{
+			safeTemperatureRangeForReservoir: []float64{28.5, 30.0},
+			waitTempPeriod:                   360,
+			waterOutDuration:                 140,
+			waterOutSpeed:                    100,
+			mainTankATOTimeGuard:             25,
+			reservoirATOTimeGuard:            420,
+			conditionerDosingDuration:        5,
+			conditionerDosingSpeed:           70,
+		}
+
 		//Create equipments (maintank heater, reservoir heater, reservoir pump, solenoid valve)
 		outletURIs := []string{
-			"http://192.168.178.57/cm?cmnd=Power2", //reservoir pump
-			"http://192.168.178.57/cm?cmnd=Power3", //solenoid valve
-			"http://192.168.178.57/cm?cmnd=Power4", //maintank heater
-			"http://192.168.178.57/cm?cmnd=Power5", //reservoir heater
+			"http://192.168.178.57/cm?cmnd=Backlog%20Power2", //reservoir pump
+			"http://192.168.178.57/cm?cmnd=Backlog%20Power3", //solenoid valve
+			"http://192.168.178.57/cm?cmnd=Backlog%20Power4", //maintank heater
+			"http://192.168.178.57/cm?cmnd=Backlog%20Power5", //reservoir heater
 		}
 		outletNames := []string{
 			"reservoir pump",
@@ -535,8 +555,10 @@ func (c *Controller) Program(w http.ResponseWriter, r *http.Request) {
 			"maintank heater",
 			"reservoir heater",
 		}
-		err, equipmentIDs := c.createRemoteEquipments(outletURIs, outletNames)
-
+		equipmentIDs, err := c.createRemoteEquipments(outletURIs, outletNames, macroConfig)
+		if err != nil {
+			log.Fatalln(err)
+		}
 		// Create ATOs (maintank, reservoir, and conditioner jar)
 		// The conditioner ATO doesn't control any outlet, but issues warning when the jar gets empty
 		atoNames := []string{"maintank", "reservoir", "conditioner"} //must be in the same order as inletPins
@@ -557,17 +579,6 @@ func (c *Controller) Program(w http.ResponseWriter, r *http.Request) {
 		err, DosingIDs := c.createDosingPumps(dosingPumpNames, dosingPumpPins)
 		log.Println(DosingIDs)
 
-		//TODO: Hardcoded init values, need to be configured based on fish type, reservoir size, and pump calibration times
-		macroConfig := MacroInitConfig{
-			safeTemperatureRangeForReservoir: []float64{28.5, 30.0},
-			waitTempPeriod:                   360,
-			waterOutDuration:                 140,
-			waterOutSpeed:                    100,
-			mainTankATOTimeGuard:             25,
-			reservoirATOTimeGuard:            420,
-			conditionerDosingDuration:        5,
-			conditionerDosingSpeed:           70,
-		}
 		//Create macros -> needs ato ids and dosing pump ids
 		MacroIDs, err := c.createMacros(TCSIDs[1] /*reservoir tcs*/, ATOIDs, DosingIDs, macroConfig)
 		log.Println(MacroIDs)
